@@ -11,10 +11,14 @@ def get_settings():
     config = configparser.ConfigParser()
     config.read('settings.ini')
     default = config['DEFAULT']
-    settings = {'src_root': 'https://{}.zendesk.com/api/v2/help_center'.format(default['src_kb']),
+    settings = {'cross_instance': default['cross_instance'],
+                'src_kb': default['src_kb'],
+                'dst_kb': default['dst_kb'],
+                'src_root': 'https://{}.zendesk.com/api/v2/help_center'.format(default['src_kb']),
                 'dst_root': 'https://{}.zendesk.com/api/v2/help_center'.format(default['dst_kb']),
                 'locale': default['locale'],
-                'team_user': default['team_user']}
+                'team_user': default['team_user'],
+                'notify_articles': default['notify_articles']}
     return settings
 
 
@@ -46,11 +50,12 @@ def write_data(data, resources):
         json.dump(data, f, sort_keys=True, indent=2)
 
 
-def package_article(article, put=False):
+def package_article(article, put=False, notify=False):
     """
     Creates the payload for a PUT or POST article request.
     :param article: Complete article dict from API
     :param put: Whether the payload is for a PUT request. Defaults to POST request
+    :param notify: Whether articles should notify section subscribers on creation
     :return: Abridged article dict
     """
     if put:
@@ -70,9 +75,10 @@ def package_article(article, put=False):
             'draft': article['draft'],
             'promoted': article['promoted'],
             'position': article['position'],
-            'user_segment_id': None
+            'user_segment_id': article['user_segment_id'],
+            'permission_group_id': article['permission_group_id']
         }
-        return {'article': package}
+        return {'article': package, 'notify_subscribers': notify}
 
 
 def package_comment(comment, put=False):
@@ -111,15 +117,16 @@ def package_translation(data):
     return {'translation': package}
 
 
-def verify_author(author_id, team_author_id):
+def verify_author(author_id, team_author_id, dst_kb):
     """
     Checks to see if article's author is an end user, who can't publish to HC. If yes, replace with the generic
     Zendesk team user set in settings.ini.
     :param author_id: The author's id
     :param team_author_id: The user id of a generic agent in Zendesk
+    :param dst_kb: The subdomain of the destination HC
     :return: The id of an author who is not an end user
     """
-    url = 'https://support.zendesk.com/api/v2/users/{}.json'.format(author_id)
+    url = 'https://{}.zendesk.com/api/v2/users/{}.json'.format(dst_kb,author_id)
     user = api.get_resource(url)
     if user is False:
         exit()

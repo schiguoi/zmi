@@ -9,6 +9,8 @@ sync_dates = read_data('sync_dates')
 last_sync = arrow.get(sync_dates['articles'])
 section_map = read_data('section_map')
 article_map = read_data('article_map')
+user_segment_map = read_data('user_segment_map')
+permission_group_map = read_data('permission_group_map')
 exceptions = read_data('exceptions')
 
 for section in section_map:
@@ -20,14 +22,19 @@ for section in section_map:
     url = '{}/{}/sections/{}/articles.json'.format(settings['src_root'], settings['locale'], section)
     articles = api.get_resource_list(url)
     for src_article in articles:
+        if settings['cross-instance']:
+            dst_user_segment = user_segment_map[src_article['user_segment_id']]
+            dst_permission_group = permission_group_map[src_article['permission_group_id']]
+            src_article['user_segment_id'] = dst_user_segment
+            src_article['permission_group_id'] = dst_permission_group
         if str(src_article['id']) in exceptions:
             print('{} is an exception. Skipping...'.format(src_article['id']))
             continue
         if last_sync < arrow.get(src_article['created_at']):
             print('- adding article {} to destination section {}'.format(src_article['id'], dst_section))
-            src_article['author_id'] = verify_author(src_article['author_id'], settings['team_user'])
+            src_article['author_id'] = verify_author(src_article['author_id'], settings['team_user'], settings['dst_kb'])
             url = '{}/{}/sections/{}/articles.json'.format(settings['dst_root'], settings['locale'], dst_section)
-            payload = package_article(src_article)
+            payload = package_article(src_article, notify=settings['notify_articles'])
             new_article = api.post_resource(url, payload)
             if new_article is False:
                 print('Skipping article {}'.format(src_article['id']))

@@ -6,7 +6,6 @@ The tools add and update the content incrementally based on the timestamp of the
 
 **Limitation**: The tools don't migrate non-inline attachments or rewrite links to attachments in articles.
 
-
 ### Terms of use
 
 This project is a private open-source project. It's not supported by Zendesk in any way. See the [license](https://github.com/chucknado/zmi/blob/master/LICENSE) for the terms of use.
@@ -18,13 +17,11 @@ This project is a private open-source project. It's not supported by Zendesk in 
 - [requests](http://docs.python-requests.org/en/master/)
 - [arrow](https://arrow.readthedocs.io/en/latest/)
 
-
-
 ### Set up
 
 1. Manually create matching categories and sections in the destination KB.
 
-	If the articles have translations, make sure to create matching category and section translations in the destination KB. 
+	If the articles have translations, make sure to create matching category and section translations in the destination KB.
 
 2. In **/data/section_map.json**, define a dictionary of section ids from the source KB and their corresponding ids in the destination KB. The sections can be in any category. The map is used for migrating the articles to the correct sections in the destination KB.
 
@@ -35,27 +32,39 @@ This project is a private open-source project. It's not supported by Zendesk in 
       ...
     }
 	```
+3. In **/data/user_segment_map.json** define a dictionary of user segment ids from the source KB and their corresponding ids in the destination KB.  This is optional if migrating to another brand in the same instance.
 
-3. Create a general "Team" user in the target Help Center and make the user an agent. You'll assign the user id to in the **settings.ini** file.
+4. In **/data/permission_group_map.json** define a dictionary of permissiong group ids from the source KB and their corresponding ids in the destination KB. This is optional if migrating to another brand in the same instance.
+
+5. Create a general "Team" user in the target Help Center and make the user an agent. You'll assign the user id to in the **settings.ini** file.
 
 	Articles in HC can't be authored by end users. If an author leaves the company, they're demoted to end user in Zendesk. Trying to recreate the article elsewhere with the same author causes an error.
 
-4. Specify all the values in the **settings.ini** file.
+6. Specify all the values in the **settings.ini** file.
 
 	```
 	[DEFAULT]
+    cross_instance=True
     src_kb=acme
     dst_kb=bravo
     locale=en-us
     team_user=13589481088
+    notify_articles=False
 	```
 
-5. Update the **auth.py** file with your Zendesk username and API token:
+7. Create an **auth.ini** file at the same level as the settings.ini file with your Zendesk subdomain, username and API token:
 
-    ```
-    def get_auth():
-        return '{}/token'.format('jdoe@example.com'), '9a8b7c6d5e4f3g2h1'
-    ```
+	```
+	[SRC]
+    kb=acme
+    username=email@example.com
+    token=apitoken
+
+    [DST]
+    kb=bravo
+    username=email@example.com
+    token=apitoken
+	```
 
 ### Initial sync
 
@@ -111,6 +120,3 @@ If a source section is now empty, you can delete it. If you decide to delete it,
 	See **redirect_script.js** in the source files of this project for an example of the script.
 
 2. Manually delete the source section.
-
-
-
