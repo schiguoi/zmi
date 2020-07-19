@@ -117,7 +117,7 @@ def package_translation(data):
     return {'translation': package}
 
 
-def verify_author(author_id, team_author_id, dst_kb):
+def verify_author(author_id, team_author_id, dst_kb, cross_instance=False):
     """
     Checks to see if article's author is an end user, who can't publish to HC. If yes, replace with the generic
     Zendesk team user set in settings.ini.
@@ -126,8 +126,10 @@ def verify_author(author_id, team_author_id, dst_kb):
     :param dst_kb: The subdomain of the destination HC
     :return: The id of an author who is not an end user
     """
+    if cross_instance:
+        return int(team_author_id) 
     url = 'https://{}.zendesk.com/api/v2/users/{}.json'.format(dst_kb,author_id)
-    user = api.get_resource(url)
+    user = api.get_resource(url)   
     if user is False:
         exit()
     role = user['role']

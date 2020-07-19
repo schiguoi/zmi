@@ -32,7 +32,16 @@ This project is a private open-source project. It's not supported by Zendesk in 
       ...
     }
 	```
-3. In **/data/user_segment_map.json** define a dictionary of user segment ids from the source KB and their corresponding ids in the destination KB.  This is optional if migrating to another brand in the same instance.
+3. In **/data/user_segment_map.json** define a dictionary of user segment ids from the source KB and their corresponding ids in the destination KB.  Articles visible to everyone don't have a user segment, add `"None": null` to account for this. When migrating articles within the same instance this is optional.
+
+	```
+	{
+      "None": null,
+      "115002917448": 360000007167,
+      "206223848": 360000007068,
+      ...
+    }
+	```
 
 4. In **/data/permission_group_map.json** define a dictionary of permissiong group ids from the source KB and their corresponding ids in the destination KB. This is optional if migrating to another brand in the same instance.
 

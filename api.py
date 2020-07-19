@@ -1,4 +1,5 @@
 import time
+from urllib.parse import urlparse
 from pathlib import Path
 
 import requests
@@ -19,7 +20,8 @@ def get_resource_list(url, list_name=None, paginate=True):
         resource = Path(url).stem
     record_list = {resource: []}
     while url:
-        response = requests.get(url, auth=get_auth())
+        subdomain = urlparse(url).hostname.split('.')[0]
+        response = requests.get(url, auth=get_auth(subdomain))
         if response.status_code == 429:
             print('Rate limited! Please wait.')
             time.sleep(int(response.headers['retry-after']))
@@ -45,7 +47,8 @@ def get_resource(url):
     :return: Dict of a resource, or False if the request failed.
     """
     resource = None
-    response = requests.get(url, auth=get_auth())
+    subdomain = urlparse(url).hostname.split('.')[0]
+    response = requests.get(url, auth=get_auth(subdomain))
     if response.status_code == 429:
         print('Rate limited! Please wait.')
         time.sleep(int(response.headers['retry-after']))
@@ -70,7 +73,8 @@ def post_resource(url, data, status=201):
     """
     resource = None
     headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, json=data, auth=get_auth(), headers=headers)
+    subdomain = urlparse(url).hostname.split('.')[0]
+    response = requests.post(url, json=data, auth=get_auth(subdomain), headers=headers)
     if response.status_code == 429:
         print('Rate limited! Please wait.')
         time.sleep(int(response.headers['retry-after']))
@@ -94,7 +98,8 @@ def put_resource(url, data):
     """
     resource = None
     headers = {'Content-Type': 'application/json'}
-    response = requests.put(url, json=data, auth=get_auth(), headers=headers)
+    subdomain = urlparse(url).hostname.split('.')[0]
+    response = requests.put(url, json=data, auth=get_auth(subdomain), headers=headers)
     if response.status_code == 429:
         print('Rate limited! Please wait.')
         time.sleep(int(response.headers['retry-after']))
@@ -116,7 +121,8 @@ def delete_resource(url):
     :param url: A full endpoint url, such as 'https://support.zendesk.com/api/v2/help_center/articles/2342572.json'
     :return: If successful, a 204 status code. If not, None
     """
-    response = requests.delete(url, auth=get_auth())
+    subdomain = urlparse(url).hostname.split('.')[0]
+    response = requests.delete(url, auth=get_auth(subdomain))
     if response.status_code == 429:
         print('Rate limited! Please wait.')
         time.sleep(int(response.headers['retry-after']))

@@ -2,16 +2,16 @@ import configparser
 
 """
 Returns a credentials tuple
-:param kb: The auth configuration
+:param kb: The destination kb from the settings.ini file
 :return: a credentials tuple including a username and token.
 """
-def get_auth(kb=src['kb']):
+def get_auth(kb=None):
     config = configparser.ConfigParser()
     config.read('auth.ini')
     src = config['SRC']
     dst = config['DST']
     
-    if kb == src['kb']:
-        return '{}/token'.format(src['username']), src['token']
-    elif kb == dst['kb']:
+    if kb == dst['kb']:
         return '{}/token'.format(dst['username']), dst['token']
+    else:
+        return '{}/token'.format(src['username']), src['token']

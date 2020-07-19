@@ -3,7 +3,6 @@ import arrow
 from helpers import read_data, write_data, get_settings, package_article, verify_author, write_js_redirects
 import api
 
-
 settings = get_settings()
 sync_dates = read_data('sync_dates')
 last_sync = arrow.get(sync_dates['articles'])
@@ -22,9 +21,9 @@ for section in section_map:
     url = '{}/{}/sections/{}/articles.json'.format(settings['src_root'], settings['locale'], section)
     articles = api.get_resource_list(url)
     for src_article in articles:
-        if settings['cross-instance']:
-            dst_user_segment = user_segment_map[src_article['user_segment_id']]
-            dst_permission_group = permission_group_map[src_article['permission_group_id']]
+        if settings['cross_instance']:
+            dst_user_segment = user_segment_map[str(src_article['user_segment_id'])]
+            dst_permission_group = permission_group_map[str(src_article['permission_group_id'])]
             src_article['user_segment_id'] = dst_user_segment
             src_article['permission_group_id'] = dst_permission_group
         if str(src_article['id']) in exceptions:
@@ -32,7 +31,7 @@ for section in section_map:
             continue
         if last_sync < arrow.get(src_article['created_at']):
             print('- adding article {} to destination section {}'.format(src_article['id'], dst_section))
-            src_article['author_id'] = verify_author(src_article['author_id'], settings['team_user'], settings['dst_kb'])
+            src_article['author_id'] = verify_author(src_article['author_id'], settings['team_user'], settings['dst_kb'], settings['cross_instance'])
             url = '{}/{}/sections/{}/articles.json'.format(settings['dst_root'], settings['locale'], dst_section)
             payload = package_article(src_article, notify=settings['notify_articles'])
             new_article = api.post_resource(url, payload)
