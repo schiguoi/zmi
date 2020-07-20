@@ -1,4 +1,6 @@
+import os
 import time
+from urllib.parse import urlparse
 from pathlib import Path
 
 import requests
@@ -19,7 +21,8 @@ def get_resource_list(url, list_name=None, paginate=True):
         resource = Path(url).stem
     record_list = {resource: []}
     while url:
-        response = requests.get(url, auth=get_auth())
+        subdomain = urlparse(url).hostname.split('.')[0]
+        response = requests.get(url, auth=get_auth(subdomain))
         if response.status_code == 429:
             print('Rate limited! Please wait.')
             time.sleep(int(response.headers['retry-after']))
@@ -38,14 +41,15 @@ def get_resource_list(url, list_name=None, paginate=True):
     return record_list[resource]
 
 
-def get_resource(url):
+def get_resource(url, attachment=False):
     """
     Returns a single HC resource
     :param url: A full endpoint url, such as 'https://support.zendesk.com/api/v2/help_center/articles/2342572.json'
     :return: Dict of a resource, or False if the request failed.
     """
     resource = None
-    response = requests.get(url, auth=get_auth())
+    subdomain = urlparse(url).hostname.split('.')[0]
+    response = requests.get(url, auth=get_auth(subdomain))
     if response.status_code == 429:
         print('Rate limited! Please wait.')
         time.sleep(int(response.headers['retry-after']))
@@ -54,11 +58,36 @@ def get_resource(url):
         print('Failed to get record with error {}:'.format(response.status_code))
         print(response.text)
         return False
+    if attachment == True:
+        return response.content
     for k, v in response.json().items():
         resource = v
     if type(resource) is dict:
         return resource
     return None
+
+def post_attachment(url, attachment, status=201):
+    resource = None
+    file = get_resource(attachment['content_url'], attachment=True)
+    subdomain = urlparse(url).hostname.split('.')[0]
+    file_path = os.path.join('attachments', attachment['file_name'])
+    with open(file_path, 'wb') as f:
+        f.write(file)
+    with open(file_path, 'rb') as u:
+        response = requests.post(url, data={'inline': attachment['inline']}, files={'file':u}, auth=get_auth(subdomain))
+        if response.status_code == 429:
+            print('Rate limited! Please wait.')
+            time.sleep(int(response.headers['retry-after']))
+            response = requests.post(url, files={'inline':attachment['inline'], 'file':u})
+        if response.status_code != status:
+            print('Failed to create record with error {}:'.format(response.status_code))
+            print(response.text)
+            return False
+        for k, v in response.json().items():
+            resource = v
+        if type(resource) is dict:
+            return resource
+        return None
 
 
 def post_resource(url, data, status=201):
@@ -70,7 +99,8 @@ def post_resource(url, data, status=201):
     """
     resource = None
     headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, json=data, auth=get_auth(), headers=headers)
+    subdomain = urlparse(url).hostname.split('.')[0]
+    response = requests.post(url, json=data, auth=get_auth(subdomain), headers=headers)
     if response.status_code == 429:
         print('Rate limited! Please wait.')
         time.sleep(int(response.headers['retry-after']))
@@ -94,7 +124,8 @@ def put_resource(url, data):
     """
     resource = None
     headers = {'Content-Type': 'application/json'}
-    response = requests.put(url, json=data, auth=get_auth(), headers=headers)
+    subdomain = urlparse(url).hostname.split('.')[0]
+    response = requests.put(url, json=data, auth=get_auth(subdomain), headers=headers)
     if response.status_code == 429:
         print('Rate limited! Please wait.')
         time.sleep(int(response.headers['retry-after']))
@@ -116,7 +147,8 @@ def delete_resource(url):
     :param url: A full endpoint url, such as 'https://support.zendesk.com/api/v2/help_center/articles/2342572.json'
     :return: If successful, a 204 status code. If not, None
     """
-    response = requests.delete(url, auth=get_auth())
+    subdomain = urlparse(url).hostname.split('.')[0]
+    response = requests.delete(url, auth=get_auth(subdomain))
     if response.status_code == 429:
         print('Rate limited! Please wait.')
         time.sleep(int(response.headers['retry-after']))
