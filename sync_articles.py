@@ -22,7 +22,8 @@ for section in section_map:
     articles = api.get_resource_list(url)
     for src_article in articles:
         if settings['cross_instance']:
-            dst_user_segment = user_segment_map[str(src_article['user_segment_id'])]
+            if src_article['user_segment_id'] != None:
+                dst_user_segment = user_segment_map[str(src_article['user_segment_id'])]
             dst_permission_group = permission_group_map[str(src_article['permission_group_id'])]
             src_article['user_segment_id'] = dst_user_segment
             src_article['permission_group_id'] = dst_permission_group

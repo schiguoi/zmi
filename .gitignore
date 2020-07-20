@@ -3,4 +3,5 @@
 *.iml
 *.pyc
 /_archive/
+/attachments/*
 auth.ini

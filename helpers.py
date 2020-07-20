@@ -1,9 +1,9 @@
 import os
 import json
 import configparser
+import requests
 
 import api
-
 
 # ----- Functions ----- #
 
